@@ -18,7 +18,7 @@ SRC_URL        := https://raw.githubusercontent.com/torvalds/linux/v$(MODVER)/ne
 ifeq ($(KERNEL_CC),clang)
 	LLVM_FLAGS := LLVM=1
 endif
-# Run recipe blocks in a single shell so multi-line shell constructs don't need line continuations.
+
 .ONESHELL:
 default: $(src_out)
 	$(MAKE) -C $(KDIR) M=$(BUILD_DIR_ABS) $(LLVM_FLAGS) modules
