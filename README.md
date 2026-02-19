@@ -1,11 +1,11 @@
 # bbr_classic-multi
 
-On BBRv3-patched kernels (e.g. CachyOS, TKG, Zen, Liquorix, and Xanmod), BBRv1 is replaced by BBRv3.
+On BBRv2/3-patched kernels (e.g. CachyOS, TKG, Zen, Liquorix, and Xanmod), BBRv1 is replaced by BBRv2/3.
 This module brings mainline BBRv1 back as `bbr_classic`, so you can use both side by side.
 
 ## Details
 
-The unmodified BBRv1 source `tcp_bbr.c` from upstream Linux 6.19 — the version *before* the BBRv3 patch is applied. During build, bbr_classic-multi generates `tcp_bbr_classic.c` with the following patches:
+The unmodified BBRv1 source `tcp_bbr.c` from upstream Linux 6.19 — the version *before* the BBRv2/3 patch is applied. During build, bbr_classic-multi generates `tcp_bbr_classic.c` with the following patches:
 
 - rename all occurrences of the string literal `bbr` to `bbr_classic` in the copied source file — module name visible in `sysctl` and `modprobe` as `"bbr_classic"`
 - rename struct to avoid symbol conflicts with in-tree BBRv3 `struct bbr`
