@@ -1,22 +1,21 @@
 # bbr_classic-multi
+**This Linux kernel module brings the original BBRv1 back as `bbr_classic`, so you can use both side by side.**
 
-On BBRv2/3-patched kernels (e.g. CachyOS, TKG, Zen, Liquorix, and Xanmod), BBRv1 is replaced by BBRv2/3.
-This module brings mainline BBRv1 back as `bbr_classic`, so you can use both side by side.
+Why this: On BBRv2/3-patched kernels (e.g. CachyOS, TKG, Zen, Liquorix, and Xanmod), BBRv1 is replaced by BBRv2/3.
 
-## Details
+## How it works
 
-The unmodified BBRv1 source `tcp_bbr.c` from upstream Linux 6.19 — the version *before* the BBRv2/3 patch is applied. During build, bbr_classic-multi generates `tcp_bbr_classic.c` with the following patches:
+The unmodified BBRv1 source `tcp_bbr.c` is downloaded from the main Linux tree — the version *before* the BBRv2/3 patch is applied.  
+During build, **bbr_classic-multi** generates `tcp_bbr_classic.c` with the following patches:
 
-- rename all occurrences of the string literal `bbr` to `bbr_classic` in the copied source file — module name visible in `sysctl` and `modprobe` as `"bbr_classic"`
-- rename struct to avoid symbol conflicts with in-tree BBRv3 `struct bbr`
-- replace BTF kfunc registration with a no-op to avoid build errors on kernels with `CONFIG_DEBUG_INFO_BTF_MODULES=y`
-- checks for BBRv3-patched kernel which replaces the `min_tso_segs` field with `tso_segs` with a different signature, so the original BBRv1 reference no longer compiles against BBR3-patched kernel
+- renames string literal "bbr" to "bbr_classic" — module name in sysctl and modprobe
+- renames struct bbr to avoid symbol conflicts with in-tree BBRv3
+- replaces BTF kfunc registration with a no-op (CONFIG_DEBUG_INFO_BTF_MODULES compatibility)
+- checks for removed min_tso_segs field (BBRv3 kernels) and comments it out
 
 The BBRv1 algorithm itself is untouched.
 
-See also: [CachyOS/linux-cachyos#706 (comment)] for benchmark results.
-
-Supports manual build, DKMS, and PKGBUILD installation.
+See also: [CachyOS/linux-cachyos#706] for benchmark results.
 
 ## Build (manual)
 
@@ -83,12 +82,12 @@ sysctl net.core.default_qdisc
 
 ```sh
 # add sysctl config file for persistent settings
-sudo tee /etc/sysctl.d/99-bbr-classic.conf << EOF2
+sudo tee /etc/sysctl.d/99-bbr-classic.conf << EOF
 # Set Qdisc (Fair Queue)
 net.core.default_qdisc=fq
 # Enable BBR Classic as TCP Congestion Control
 net.ipv4.tcp_congestion_control=bbr_classic
-EOF2
+EOF
 # reload sysctl settings
 sudo sysctl --system
 ```
