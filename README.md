@@ -8,10 +8,10 @@ Why this: On BBRv2/3-patched kernels (e.g. CachyOS, TKG, Zen, Liquorix, and Xanm
 The unmodified BBRv1 source `tcp_bbr.c` is downloaded from the main Linux tree — the version *before* the BBRv2/3 patch is applied.  
 During build, **bbr_classic-multi** generates `tcp_bbr_classic.c` with the following patches:
 
-- renames string literal "bbr" to "bbr_classic" — module name in sysctl and modprobe
+- renames string literal "bbr" to "bbr_classic" for new congestion control name
 - renames struct bbr to avoid symbol conflicts with in-tree BBRv3
 - replaces BTF kfunc registration with a no-op (CONFIG_DEBUG_INFO_BTF_MODULES compatibility)
-- checks for removed min_tso_segs field (BBRv3 kernels) and comments it out
+- checks for BBRv3 kernels and replaces with a no-op to maintain compatibility
 
 The BBRv1 algorithm itself is untouched.
 
@@ -42,7 +42,7 @@ Uninstall:
 sudo make dkms-uninstall
 ```
 
-## Install **bbr-classic-dkms** via PKGBUILD (Arch-based distros)
+## Install **bbr-classic-dkms** (Arch-based distros)
 
 ```sh
 git clone https://github.com/damachine/bbr_classic-multi.git
