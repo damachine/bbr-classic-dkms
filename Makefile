@@ -1,3 +1,5 @@
+# Maintainer: damachin3 (damachine3 at proton dot me)
+# Website: https://github.com/damachine/bbr_classic-multi
 modname        := tcp_bbr_classic
 src_in         := tcp_bbr.c
 BUILD_DIR      ?= build
@@ -19,7 +21,6 @@ ifeq ($(KERNEL_CC),clang)
     LLVM_FLAGS := LLVM=1
 endif
 
-# Kernel-style status output
 Q = @
 KECHO = printf "  %-8s%s\n"
 
@@ -91,8 +92,8 @@ uninstall:
 
 help:
 	@echo "Available targets:"
-	@printf "  %-30s - %s\n" "make"                  "Download tcp_bbr.c and build the module"
-	@printf "  %-30s - %s\n" "make KVERSION=6.19.3"  "Build for a specific kernel"
+	@printf "  %-30s - %s\n" "make"                   "Download tcp_bbr.c and build the module"
+	@printf "  %-30s - %s\n" "make KVERSION=6.18.13"  "Build for a specific kernel"
 	@printf "  %-30s - %s\n" "make clean"             "Remove build directory and downloaded tcp_bbr.c"
 	@printf "  %-30s - %s\n" "sudo make load"         "Load module for testing (insmod)"
 	@printf "  %-30s - %s\n" "sudo make install"      "Install module permanently (no DKMS)"

@@ -1,6 +1,5 @@
 # Maintainer: damachin3 (damachine3 at proton dot me)
 # Website: https://github.com/damachine/bbr_classic-multi
-
 pkgname=bbr-classic-dkms
 pkgver=6.19
 pkgrel=1
