@@ -1,7 +1,7 @@
 # Maintainer: damachin3 (damachine3 at proton dot me)
 # Website: https://github.com/damachine/bbr_classic-multi
 pkgname=bbr-classic-dkms
-pkgver=7.0
+pkgver=7.1
 pkgrel=1
 pkgdesc="BBRv1 TCP congestion control module (backport for BBRv3-patched kernels)"
 arch=('x86_64')
