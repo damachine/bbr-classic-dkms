@@ -8,12 +8,12 @@ src_out        := $(BUILD_DIR_ABS)/tcp_bbr_classic.c
 KBUILD_FILE    := $(BUILD_DIR_ABS)/Kbuild
 
 KVERSION       ?= $(shell uname -r)
-KDIR           := /lib/modules/$(KVERSION)/build
+KDIR           ?= /lib/modules/$(KVERSION)/build
 MODVER         ?= $(shell echo $(KVERSION) | cut -d. -f1-2)
 DKMS           ?= dkms
 DKMS_MODNAME   ?= bbr-classic
 DKMS_DEST      ?= /usr/src/$(DKMS_MODNAME)-$(MODVER)
-KCONFIG        := /lib/modules/$(KVERSION)/build/.config
+KCONFIG        := $(KDIR)/.config
 KERNEL_CC      := $(shell grep -qs '^CONFIG_CC_IS_CLANG=y' $(KCONFIG) && echo clang)
 SRC_URL        := https://raw.githubusercontent.com/torvalds/linux/v$(MODVER)/net/ipv4/tcp_bbr.c
 
@@ -25,6 +25,7 @@ Q = @
 KECHO = printf "  %-8s%s\n"
 
 .ONESHELL:
+.SHELLFLAGS := -eu -c
 
 default: $(src_out)
 	$(Q)$(MAKE) -C $(KDIR) M=$(BUILD_DIR_ABS) $(LLVM_FLAGS) modules
@@ -37,13 +38,16 @@ $(KBUILD_FILE): | $(BUILD_DIR_ABS)
 
 $(src_in):
 	$(Q)$(KECHO) "FETCH" "$(src_in)"
-	$(Q)curl -sL -o $(src_in) "$(SRC_URL)"
+	$(Q)curl --fail --location --silent --show-error \
+		--output $(src_in) "$(SRC_URL)"
 
 $(src_out): $(src_in) $(KBUILD_FILE)
 	$(Q)$(KECHO) "PATCH" "$(src_out)"
 	$(Q)cp $(src_in) $(src_out)
 	$(Q)sed -i 's/"bbr"/"bbr_classic"/g' $(src_out)
-	$(Q)sed -i 's/struct bbr/struct bbr_classic/g' $(src_out)
+	$(Q)sed -i 's/struct bbr\>/struct bbr_classic/g' $(src_out)
+	$(Q)sed -i 's/__bpf_kfunc[[:space:]]*//g' $(src_out)
+	$(Q)sed -i '/^BTF_KFUNCS_START(tcp_bbr_check_kfunc_ids)$$/,/^};$$/d' $(src_out)
 	$(Q)sed -i 's/ret = register_btf_kfunc_id_set.*/ret = 0; \/\/ skip BTF kfunc registration (out-of-tree)/' $(src_out)
 	$(Q)header_file=""
 	for candidate in "$(KDIR)/source/include/net/tcp.h" "$(KDIR)/include/net/tcp.h"; do
@@ -57,6 +61,9 @@ $(src_out): $(src_in) $(KBUILD_FILE)
 	elif ! grep -q "min_tso_segs" "$$header_file"; then
 		sed -i 's/\.min_tso_segs/\/\/ .min_tso_segs/g' $(src_out)
 	fi
+	grep -q '"bbr_classic"' $(src_out)
+	grep -q 'struct bbr_classic' $(src_out)
+	! grep -q '__bpf_kfunc\|BTF_KFUNCS_START(tcp_bbr_check_kfunc_ids)\|register_btf_kfunc_id_set' $(src_out)
 
 clean:
 	$(Q)if [ -d "$(BUILD_DIR_ABS)" ]; then
@@ -70,7 +77,7 @@ clean:
 
 load:
 	$(Q)$(KECHO) "RMMOD" "$(modname)"
-	$(Q)-rmmod $(modname)
+	$(Q)rmmod $(modname) 2>/dev/null || true
 	$(Q)$(KECHO) "INSMOD" "$(modname).ko"
 	$(Q)insmod $(BUILD_DIR_ABS)/$(modname).ko
 
@@ -78,15 +85,16 @@ install:
 	$(Q)if [ ! -f "$(BUILD_DIR_ABS)/$(modname).ko" ]; then
 		printf "  ERROR   Module not built. Run 'make' first.\n" >&2; exit 1
 	fi
-	$(Q)$(KECHO) "INSTALL" "/lib/modules/$(KVERSION)/kernel/net/ipv4/$(modname).ko"
-	$(Q)install -Dm644 $(BUILD_DIR_ABS)/$(modname).ko \
-		/lib/modules/$(KVERSION)/kernel/net/ipv4/$(modname).ko
-	$(Q)$(KECHO) "DEPMOD" "$(KVERSION)"
-	$(Q)depmod -a $(KVERSION)
+	$(Q)$(KECHO) "INSTALL" "/lib/modules/$(KVERSION)/updates/"
+	$(Q)$(MAKE) -C $(KDIR) M=$(BUILD_DIR_ABS) \
+		INSTALL_MOD_DIR=updates modules_install
 
 uninstall:
-	$(Q)$(KECHO) "REMOVE" "/lib/modules/$(KVERSION)/kernel/net/ipv4/$(modname).ko"
-	$(Q)rm -f /lib/modules/$(KVERSION)/kernel/net/ipv4/$(modname).ko
+	$(Q)$(KECHO) "REMOVE" "/lib/modules/$(KVERSION)/updates/$(modname).ko*"
+	$(Q)rm -f /lib/modules/$(KVERSION)/updates/$(modname).ko \
+		/lib/modules/$(KVERSION)/updates/$(modname).ko.gz \
+		/lib/modules/$(KVERSION)/updates/$(modname).ko.xz \
+		/lib/modules/$(KVERSION)/updates/$(modname).ko.zst
 	$(Q)$(KECHO) "DEPMOD" "$(KVERSION)"
 	$(Q)depmod -a $(KVERSION)
 

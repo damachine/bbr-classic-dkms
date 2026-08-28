@@ -111,7 +111,8 @@ Patches in `tcp_bbr_classic.c`:
 
 - renames struct bbr to avoid symbol conflicts with in-tree BBRv3
 
-- replaces BTF kfunc registration with a no-op (CONFIG_DEBUG_INFO_BTF_MODULES compatibility)
+- removes in-tree-only BTF kfunc metadata and skips its registration
+  (CONFIG_DEBUG_INFO_BTF_MODULES compatibility)
 
 - checks for BBRv3 kernels
 
